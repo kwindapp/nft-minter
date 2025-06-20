@@ -13,7 +13,7 @@ export default function UploadForm() {
           Logout
         </button>
       </div>
-      <div className="flex items-center justify-center overflow-y-hidden">
+      <div className="flex items-center justify-center overflow-y-hidden bg-white min-h-screen">
         <div className="w-2/3 max-w-screen mt-6">
 
           {/* Title */}
@@ -35,7 +35,7 @@ export default function UploadForm() {
                     name="productName"
                     id="productName"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    placeholder="Mask Model X"
+                    placeholder="North"
                   />
                 </div>
 
@@ -49,7 +49,7 @@ export default function UploadForm() {
                     name="productModel"
                     id="productModel"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    placeholder="Model 2025-B"
+                    placeholder="Orbit 9m2"
                   />
                 </div>
 
@@ -77,7 +77,7 @@ export default function UploadForm() {
                     name="serialNumber"
                     id="serialNumber"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    placeholder="SN-XYZ-123456"
+                    placeholder="SN"
                   />
                 </div>
 
