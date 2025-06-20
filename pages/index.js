@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { NFTStorage, File } from 'nft.storage'
 import { ethers } from 'ethers'
 
-// ✅ Replace this with your actual deployed contract address
+// Replace with your actual deployed contract address
 const contractAddress = "0xYourContractAddress"
 const contractABI = [
   "function mintNFT(address recipient, string memory tokenURI) public returns (uint256)"
 ]
 
-// ✅ Your full, valid NFT.Storage API Key
+// Your NFT.Storage API key
 const NFT_STORAGE_KEY = "2e5743e4.e1a6bad77aa64faabd6dbe67418c3e68"
 const client = new NFTStorage({ token: NFT_STORAGE_KEY })
 
@@ -24,11 +24,14 @@ export default function UploadForm() {
   const [serialNumber, setSerialNumber] = useState("")
   const [additionalData, setAdditionalData] = useState("")
   const [file, setFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [mintedImageUrl, setMintedImageUrl] = useState(null)
 
   const connectWallet = async () => {
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" })
       setAccount(accounts[0])
+      setError(null)
     } catch {
       setError("⚠ Wallet connection failed. Please try again.")
     }
@@ -55,9 +58,24 @@ export default function UploadForm() {
     }
   }
 
+  const fetchMetadataAndGetImageUrl = async (tokenURI) => {
+    try {
+      const url = tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+      const response = await fetch(url)
+      if (!response.ok) throw new Error("Failed to fetch metadata")
+      const metadata = await response.json()
+      if (!metadata.image) throw new Error("Metadata does not contain image URL")
+      return metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+    } catch (err) {
+      console.error("Error fetching metadata or image:", err)
+      return null
+    }
+  }
+
   const mintNFT = async (e) => {
     e.preventDefault()
     setError(null)
+    setMintedImageUrl(null)
 
     if (!account) return setError("⚠ Connect wallet first.")
     if (!file || !productName || !productModel || !year || !serialNumber) {
@@ -67,8 +85,10 @@ export default function UploadForm() {
     try {
       setMinting(true)
 
+      // Upload metadata and image to IPFS
       const tokenURI = await uploadFileToIPFS()
 
+      // Connect to contract and mint NFT
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const contract = new ethers.Contract(contractAddress, contractABI, signer)
@@ -78,6 +98,10 @@ export default function UploadForm() {
 
       alert("✅ NFT minted successfully!\nTransaction Hash:\n" + tx.hash)
 
+      // Fetch the image URL from metadata to display minted NFT image
+      const imageUrl = await fetchMetadataAndGetImageUrl(tokenURI)
+      setMintedImageUrl(imageUrl)
+
       // Reset form
       setProductName("")
       setProductModel("")
@@ -85,6 +109,7 @@ export default function UploadForm() {
       setSerialNumber("")
       setAdditionalData("")
       setFile(null)
+      setPreviewUrl(null)
       document.getElementById("image-upload").value = null
 
     } catch (err) {
@@ -95,12 +120,23 @@ export default function UploadForm() {
     }
   }
 
+  const onFileChange = (e) => {
+    const selectedFile = e.target.files?.[0] || null
+    setFile(selectedFile)
+    if (selectedFile) {
+      setPreviewUrl(URL.createObjectURL(selectedFile))
+    } else {
+      setPreviewUrl(null)
+    }
+  }
+
   return (
     <>
       <Head>
-         <title>HeliumSmartWorld NFT Mint Tool</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+        <title>HeliumSmartWorld NFT Mint Tool</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
       </Head>
+
       <div className="w-screen h-auto flex justify-end items-center">
         <button
           onClick={connectWallet}
@@ -109,14 +145,50 @@ export default function UploadForm() {
           {account ? `Connected: ${account.slice(0, 6)}...${account.slice(-4)}` : "Connect MetaMask"}
         </button>
       </div>
+
       <div className="flex items-center justify-center overflow-y-hidden bg-white min-h-screen">
         <div className="w-2/3 max-w-screen mt-6">
-         <h1
-  className="text-4xl sm:text-5xl font-bold text-center text-indigo-700 mb-8 tracking-tight drop-shadow-md"
-  style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em' }}
->
-  Helium<span className="text-black">Smart</span>World <span className="text-indigo-500"> NFT MINT TOOL</span>
-</h1>
+
+          <h1
+            className="text-4xl sm:text-5xl font-bold text-center mb-8 tracking-tight drop-shadow-md"
+            style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em' }}
+          >
+            Helium
+            <span className="text-black fade-slide-in" style={{ animationDelay: "0.5s" }}>SmartWorld</span>
+            <span className="text-indigo-500 color-pulse fade-slide-in" style={{ animationDelay: "1s" }}>
+              {' '}Product NFT Mint Tool
+            </span>
+          </h1>
+
+          <style>{`
+            @keyframes fadeSlideIn {
+              0% {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+
+            @keyframes colorPulse {
+              0%, 100% {
+                color: #6366f1; /* indigo-500 */
+              }
+              50% {
+                color:rgb(13, 116, 121); /* darker indigo */
+              }
+            }
+
+            .fade-slide-in {
+              animation: fadeSlideIn 1s ease forwards;
+            }
+
+            .color-pulse {
+              animation: colorPulse 3s ease-in-out infinite;
+            }
+          `}</style>
 
           <form onSubmit={mintNFT}>
             <div className="shadow sm:rounded-md sm:overflow-hidden">
@@ -126,7 +198,7 @@ export default function UploadForm() {
                 <Input label="Product Model" value={productModel} onChange={setProductModel} placeholder="Orbit 9m2" />
                 <Input label="Year" value={year} onChange={setYear} type="number" placeholder="2025" />
                 <Input label="Serial Number" value={serialNumber} onChange={setSerialNumber} placeholder="SN:" />
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Additional Data</label>
                   <textarea
@@ -146,9 +218,18 @@ export default function UploadForm() {
                         id="image-upload"
                         type="file"
                         accept="image/*"
-                        onChange={e => setFile(e.target.files?.[0] || null)}
+                        onChange={onFileChange}
                       />
                       <p className="text-xs text-gray-500">PNG, JPG, or GIF up to 10MB</p>
+
+                      {/* Preview uploaded image */}
+                      {previewUrl && (
+                        <img
+                          src={previewUrl}
+                          alt="Image Preview"
+                          className="mx-auto mt-2 max-w-xs rounded-md shadow-md"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -167,6 +248,18 @@ export default function UploadForm() {
               </div>
             </div>
           </form>
+
+          {/* Show minted NFT image */}
+          {mintedImageUrl && (
+            <div className="mt-8 text-center">
+              <h2 className="text-xl font-semibold mb-2">Minted NFT Image:</h2>
+              <img
+                src={mintedImageUrl}
+                alt="Minted NFT"
+                className="mx-auto max-w-xs rounded-md shadow-lg"
+              />
+            </div>
+          )}
         </div>
       </div>
     </>
