@@ -10,7 +10,7 @@ const contractABI = [
 ]
 
 // NFT.Storage API Key
-const NFT_STORAGE_KEY = "3aed0601.4cabb0d99678455d9b1df3115bcff73f"
+const NFT_STORAGE_KEY = "2e5743e4.e1a6bad77aa64faabd6dbe67418c3e68" // Full valid JWT key from nft.storage
 const client = new NFTStorage({ token: NFT_STORAGE_KEY })
 
 export default function UploadForm() {
