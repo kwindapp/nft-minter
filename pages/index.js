@@ -3,14 +3,14 @@ import { useState } from 'react'
 import { NFTStorage, File } from 'nft.storage'
 import { ethers } from 'ethers'
 
-// Replace with your deployed contract address
+// ✅ Replace this with your actual deployed contract address
 const contractAddress = "0xYourContractAddress"
 const contractABI = [
   "function mintNFT(address recipient, string memory tokenURI) public returns (uint256)"
 ]
 
-// NFT.Storage API Key
-const NFT_STORAGE_KEY = "2e5743e4.e1a6bad77aa64faabd6dbe67418c3e68" // Full valid JWT key from nft.storage
+// ✅ Your full, valid NFT.Storage API Key
+const NFT_STORAGE_KEY = "2e5743e4.e1a6bad77aa64faabd6dbe67418c3e68"
 const client = new NFTStorage({ token: NFT_STORAGE_KEY })
 
 export default function UploadForm() {
@@ -18,7 +18,6 @@ export default function UploadForm() {
   const [error, setError] = useState(null)
   const [minting, setMinting] = useState(false)
 
-  // Form state
   const [productName, setProductName] = useState("")
   const [productModel, setProductModel] = useState("")
   const [year, setYear] = useState("")
@@ -31,38 +30,43 @@ export default function UploadForm() {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" })
       setAccount(accounts[0])
     } catch {
-      setError("Wallet connection failed.")
+      setError("⚠ Wallet connection failed. Please try again.")
     }
   }
 
   const uploadFileToIPFS = async () => {
-    const imageFile = new File([file], file.name, { type: file.type })
+    try {
+      const imageFile = new File([file], file.name, { type: file.type })
 
-    const metadata = await client.store({
-      name: productName,
-      description: additionalData,
-      image: imageFile,
-      properties: {
-        model: productModel,
-        year,
-        serialNumber
-      }
-    })
+      const metadata = await client.store({
+        name: productName,
+        description: additionalData || "No additional data",
+        image: imageFile,
+        properties: {
+          model: productModel,
+          year,
+          serialNumber
+        }
+      })
 
-    return metadata.url // ipfs://.../metadata.json
+      return metadata.url // ipfs://.../metadata.json
+    } catch (err) {
+      throw new Error("IPFS upload failed: " + err.message)
+    }
   }
 
   const mintNFT = async (e) => {
     e.preventDefault()
     setError(null)
 
-    if (!account) return setError("Connect wallet first.")
+    if (!account) return setError("⚠ Connect wallet first.")
     if (!file || !productName || !productModel || !year || !serialNumber) {
-      return setError("Please fill all required fields and upload image.")
+      return setError("⚠ Please fill all required fields and upload an image.")
     }
 
     try {
       setMinting(true)
+
       const tokenURI = await uploadFileToIPFS()
 
       const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -71,18 +75,21 @@ export default function UploadForm() {
 
       const tx = await contract.mintNFT(account, tokenURI)
       await tx.wait()
-      alert("NFT minted successfully! Tx Hash: " + tx.hash)
 
-      // Reset
+      alert("✅ NFT minted successfully!\nTransaction Hash:\n" + tx.hash)
+
+      // Reset form
       setProductName("")
       setProductModel("")
       setYear("")
       setSerialNumber("")
       setAdditionalData("")
       setFile(null)
+      document.getElementById("image-upload").value = null
+
     } catch (err) {
       console.error(err)
-      setError(err.message || "Minting failed.")
+      setError(err.message || "⚠ Minting failed.")
     } finally {
       setMinting(false)
     }
@@ -91,7 +98,8 @@ export default function UploadForm() {
   return (
     <>
       <Head>
-        <title>HeliumSmartWorld NFT Mint Tool</title>
+         <title>HeliumSmartWorld NFT Mint Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
       </Head>
       <div className="w-screen h-auto flex justify-end items-center">
         <button
@@ -103,9 +111,12 @@ export default function UploadForm() {
       </div>
       <div className="flex items-center justify-center overflow-y-hidden bg-white min-h-screen">
         <div className="w-2/3 max-w-screen mt-6">
-          <h1 className="text-3xl font-extrabold text-center text-indigo-700 mb-6 tracking-tight drop-shadow-md">
-            HeliumSmartWorld KWind Product NFT Mint Tool
-          </h1>
+         <h1
+  className="text-4xl sm:text-5xl font-bold text-center text-indigo-700 mb-8 tracking-tight drop-shadow-md"
+  style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-0.02em' }}
+>
+  Helium<span className="text-black">Smart</span>World <span className="text-indigo-500"> NFT MINT TOOL</span>
+</h1>
 
           <form onSubmit={mintNFT}>
             <div className="shadow sm:rounded-md sm:overflow-hidden">
@@ -131,7 +142,12 @@ export default function UploadForm() {
                   <label className="block text-sm font-medium text-gray-700">Upload Product Image</label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                     <div className="space-y-1 text-center">
-                      <input type="file" onChange={e => setFile(e.target.files[0])} />
+                      <input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={e => setFile(e.target.files?.[0] || null)}
+                      />
                       <p className="text-xs text-gray-500">PNG, JPG, or GIF up to 10MB</p>
                     </div>
                   </div>
