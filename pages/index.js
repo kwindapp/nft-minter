@@ -1,19 +1,16 @@
 import Head from 'next/head'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NFTStorage, File } from 'nft.storage'
 import { ethers } from 'ethers'
 
-// ✅ Your deployed contract address and ABI
-const contractAddress = "0xYourContractAddress" // ← Replace with your actual contract address
+const contractAddress = "0xYourContractAddress" // Replace with your actual contract address
 const contractABI = [
   "function mintNFT(address recipient, string memory tokenURI) public returns (uint256)"
 ]
 
-// ✅ Your NFT.Storage API key
 const NFT_STORAGE_KEY = "42baf681.b4b188b5a0bd417da29e0ef011116732"
 const client = new NFTStorage({ token: NFT_STORAGE_KEY })
 
-// ✅ Upload metadata + image to IPFS
 const uploadToIPFS = async (name, description, imageFile) => {
   try {
     const metadata = await client.store({
@@ -21,8 +18,7 @@ const uploadToIPFS = async (name, description, imageFile) => {
       description,
       image: new File([imageFile], imageFile.name, { type: imageFile.type }),
     })
-
-    return metadata.url // ipfs://...
+    return metadata.url
   } catch (err) {
     throw new Error("IPFS upload failed: " + err.message)
   }
@@ -41,6 +37,29 @@ export default function UploadForm() {
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [mintedImageUrl, setMintedImageUrl] = useState(null)
+
+  // Animate browser tab title (document.title)
+  useEffect(() => {
+    const tabTitle = "HeliumSmartWorld NFT Mint Tool 🚀   "
+    let pos = 0
+    const interval = setInterval(() => {
+      document.title = tabTitle.substring(pos) + tabTitle.substring(0, pos)
+      pos = (pos + 1) % tabTitle.length
+    }, 300)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Animate page heading text
+  const fullHeading = "HeliumSmartWorld KWind Product NFT Mint Tool 🚀   "
+  const [animatedHeading, setAnimatedHeading] = useState(fullHeading)
+  useEffect(() => {
+    let pos = 0
+    const interval = setInterval(() => {
+      setAnimatedHeading(fullHeading.substring(pos) + fullHeading.substring(0, pos))
+      pos = (pos + 1) % fullHeading.length
+    }, 300)
+    return () => clearInterval(interval)
+  }, [])
 
   const connectWallet = async () => {
     try {
@@ -77,14 +96,12 @@ export default function UploadForm() {
     try {
       setMinting(true)
 
-      // ✅ Upload metadata to IPFS
       const tokenURI = await uploadToIPFS(
         productName,
         additionalData || "No additional data",
         file
       )
 
-      // ✅ Interact with smart contract
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const contract = new ethers.Contract(contractAddress, contractABI, signer)
@@ -97,7 +114,6 @@ export default function UploadForm() {
       const imageUrl = await fetchMetadataAndGetImageUrl(tokenURI)
       setMintedImageUrl(imageUrl)
 
-      // ✅ Reset form
       setProductName("")
       setProductModel("")
       setYear("")
@@ -142,15 +158,14 @@ export default function UploadForm() {
         <div className="w-2/3 max-w-screen mt-6">
 
           <h1 className="text-4xl sm:text-5xl font-bold text-center mb-8 tracking-tight drop-shadow-md">
-            Helium<span className="text-black">SmartWorld</span>
-            <span className="text-indigo-500"> Product NFT Mint Tool</span>
+            {animatedHeading}
           </h1>
 
           <form onSubmit={mintNFT}>
             <div className="shadow sm:rounded-md sm:overflow-hidden">
               <div className="px-4 py-5 bg-white space-y-6 sm:p-6">
-                <Input label="Product Name" value={productName} onChange={setProductName} placeholder="North" />
-                <Input label="Product Model" value={productModel} onChange={setProductModel} placeholder="Orbit 9m2" />
+                <Input label="Product Name" value={productName} onChange={setProductName} placeholder="e.g.North" />
+                <Input label="Product Model" value={productModel} onChange={setProductModel} placeholder="e.g.Orbit 9m2" />
                 <Input label="Year" value={year} onChange={setYear} type="number" placeholder="2025" />
                 <Input label="Serial Number" value={serialNumber} onChange={setSerialNumber} placeholder="SN:" />
 
