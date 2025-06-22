@@ -40,7 +40,7 @@ export default function UploadForm() {
 
   // Animate browser tab title (document.title)
   useEffect(() => {
-    const tabTitle = "HeliumSmartWorld NFT Mint Tool 🚀   "
+    const tabTitle = "HeliumSmartWorld NFT Mint Tool 🚀"
     let pos = 0
     const interval = setInterval(() => {
       document.title = tabTitle.substring(pos) + tabTitle.substring(0, pos)
@@ -50,7 +50,7 @@ export default function UploadForm() {
   }, [])
 
   // Animate page heading text
-  const fullHeading = "HeliumSmartWorld KWind Product NFT Mint Tool 🚀   "
+  const fullHeading = "HeliumSmartWorld Product NFT Mint Tool 🚀   "
   const [animatedHeading, setAnimatedHeading] = useState(fullHeading)
   useEffect(() => {
     let pos = 0
